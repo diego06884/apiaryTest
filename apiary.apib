@@ -1,0 +1,3210 @@
+FORMAT: 1A
+HOST: http://academy7.apiblueprint.org/
+
+# Academy
+Academy API as it currently stands in their live sites as well as some additional, net new endpoints. The endpoints that are defined
+are the exact endpoints used in their sites. These will, most likely, change to be more uniform.
+
+# Group Account 
+## User Login [/api/Account/Login]
+### Login [POST]
+Academy log in. UserName and Email are required in this POST.
+
+__Failed login will return:__
+
+```
+{
+    "data": null,
+    "message": "The User ID entered does not match a record in our system. Please try again or contact the Academy at (800) 877-1600 x 5000 for assistance.",
+    "successful": false
+}
+```
+
+__Successful login will return:__
+
+```
+{
+    "data": "http://www.eatrightpro.org/users/login?returnUrl=http://www.eatright.org",
+    "message": "",
+    "successful": true
+}
+```
+
++ Request (application/json)
+
+        {
+            "ReturnUrl": "http://www.eatrightpro.org/users/join-renew",
+            "Username": "JFusco",
+            "Password": "somepassword"
+        }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": null,
+                "message": "The User ID entered does not match a record in our system. Please try again or contact the Academy at (800) 877-1600 x 5000 for assistance.",
+                "successful": false
+            }
+
+
+
+## User Register [/api/Registration/Register]
+### Register [POST]
+__If you have a CDR Number:__
+
+These values will be defaulted:
+- __State__ is defaulted to "AA"
+- __Country__ is defaulted to "UNITED STATES"
+
+You will ONLY need to fill out the following
+fields which are all required - the form will only show the user these fields:
+- FirstName
+- LastName
+- Email
+- CDRNumber
+
+__If you do not have a CDR Number:__
+
+User can click *"I don't have a CDR Number"*, which will bring up
+more form fields. These fields will be required:
+- FirstName
+- LastName
+- Email
+- AddressLine1
+- City
+- Zip
+- PhoneNumber
+- NewPassword
+- ConfirmedPassword
+
+__Failed registration will return:__
+
+```
+{
+    "data": null,
+    "errorFor": null,
+    "message": "The registration number entered was not found in the system. Please try again or contact the Member Help Desk at (800) 877-1600 x 5000.",
+    "successful": false
+}
+```
+
+__If user has an invalid PhoneNumber__
+```
+{
+    "data": null,
+    "errorFor": "PhoneNumber",
+    "message": "Please enter a valid phone number.",
+    "successful": false
+}
+```
+
+__Successful__
+```
+{
+    "data": "http://www.eatright.org/users/firstLogin",
+    "message": "",
+    "successful": true
+}
+```
+
+
++ Request (application/x-www-form-urlencoded)
+
+        {
+            "ActivationAttempt": "True",
+            "ReturnUrl": "http://www.eatrightpro.org/users/join-renew",
+            "EmailTypeId": "Personal",
+            "FirstName": "Joe",
+            "LastName": "Fusco",
+            "Email": "jfusco311@gmail.com",
+            "CDRNumber": "34234",
+            "AddressTypeId": "a6566b3c-9a6d-49d6-b683-8a1389117009",
+            "AddressLine1": "",
+            "AddressLine2": "",
+            "AddressLine3": "",
+            "City": "",
+            "State": "AA",
+            "Zip": "",
+            "Country": "UNITED STATES",
+            "PhoneTypeId": "867b6806-50e4-4d18-8a55-c165f153d876",
+            "PhoneNumber": "",
+            "NewPassword": "",
+            "ConfirmedPassword": ""
+        }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "data": "http://www.eatrightpro.org/users/login?returnUrl=http%3a%2f%2fwww.eatrightpro.org%2fusers%2fjoin-renew",
+                "message": "",
+                "successful": true
+            }
+
+## Country Information [/api/Registration/CountryInformation?country={country}]
+### Get Country Information [GET]
+On registration, user selects a country and will return a list of states in the selected country. PhoneMask is not used anywhere that we can see. State text should be in abbreviation format to avoid breaking the UI (i.e. NY instead of New York)
+
++ Parameters
+    + country (string, required, `UNITED+KINGDOM`) - Selected country
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {  
+               "PhoneMask":"",
+               "States":[  
+                  {  
+                     "Selected":false,
+                     "Text":"Berkshire",
+                     "Value":"Berkshire"
+                  },
+                  {  
+                     "Selected":true,
+                     "Text":"London",
+                     "Value":"London"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"OXFORDSHIRE",
+                     "Value":"OXFORDSHIRE"
+                  }
+               ]
+            }
+
+
+## Reset Password [/api/Account/ResetPassword]
+### Request Password Reset [POST]
+If user forgets their password, they are taken to a form which allows them to put their email
+in to receieve a link to reset their password. The email field is required and validated.
+
+__Failed attempt will return a simple string error:__
+
+```
+We’re sorry! Something has gone wrong on our end and we’re working to get it fixed. Please try resetting your password again soon.
+```
+
++ Request (application/x-www-form-urlencoded)
+
+        {
+            "Email": "jfusco311@gmail.com"
+        }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {  
+               "Successful": false,
+               "Message": "An email has been sent to your email address you provided."
+            }
+
+
+## Change Password [/users/changepassword]
+### Change Password [POST]
+User clicks a link in their email - redirects them to the sign in page and they put in their
+new, temporary password. It then forces you to change your password
+
++ Request (application/x-www-form-urlencoded)
+
+        {
+            "ReturnUrl": "",
+            "OldPassword": "FcPrn!>3Q(o",
+            "NewPassword": "E@tR1ght!",
+            "NewPasswordConfirmation": "E@tR1ght!"
+        }
+
++ Response 301
+
+
+## Logout [/users/logout?Site={id}]
+### Logout [GET]
+Logs user out of site and redirects to home page
+
++ Parameters
+    + id (string, required, `ADA`) - Name of site.
+
++ Response 301
+
+
+# Group Store
+## Cart Add Key [/cart/addkey/{productkey}]
+### Add Product Key [POST]
+When user clicks to add an item to the cart, addkey gets called passing along the product key.
+
++ Parameters
+    + productkey (string, required) - Product key
+
++ Request (application/x-www-form-urlencoded; charset=UTF-8)
+
+        {
+            "quantity": 1
+        }
+
++ Response 200 (text/html; charset=utf-8)
+
+    + Body
+
+            "the cart: 1, wasactive:True isnowactivated:True token:4e9f904c-eaff-46f0-b593-dfef106a1b85"
+            
+
+## Init Checkout [/checkout/Init?_={id}]
+### Init [GET]
+When user enters area to begin the checkout process, this call is made to get back the steps and the current step
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+               "steps":[  
+                  {
+                     "name":"order-summary",
+                     "index":0,
+                     "title":"Order Summary",
+                     "definition":{  
+                        "itemCount":0,
+                        "totalPrice":0.0,
+                        "totalPriceString":"$0.00",
+                        "items":null,
+                        "subTotalString":null,
+                        "taxString":null,
+                        "totalString":null,
+                        "cartState":{  
+                           "serviceCharge":0.00,
+                           "cartItems":[  
+                              {  
+                                 "cartItemId":{},
+                                 "productTypeCode":"Publication",
+                                 "showOnInvoice":false,
+                                 "canChangeQty":true,
+                                 "canChangeQtyFlagText":"",
+                                 "packageGroupingId":{},
+                                 "previousInvoiceId":null,
+                                 "previousInvoiceCode":"",
+                                 "previousInvoiceTransactionDate":"0001-01-01T00:00:00",
+                                 "isFromPreviousInvoice":false,
+                                 "itemName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "id":{},
+                                 "backordered":false,
+                                 "invoiceDetailTypeCode":"Product",
+                                 "invoiceDetailType":"Product",
+                                 "amount":36.00,
+                                 "balance":0.00,
+                                 "unitPrice":36.00,
+                                 "qty":1.00,
+                                 "subTotal":36.0000,
+                                 "tax":0.00,
+                                 "discount":0.00,
+                                 "unitPriceLessDiscount":36.00,
+                                 "subTotalLessDiscount":36.0000,
+                                 "isDiscounted":false,
+                                 "total":36.00,
+                                 "productId":{},
+                                 "productName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "productCode":"0175",
+                                 "priceId":{},
+                                 "priceName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "parentEntityId":null,
+                                 "changeControlSignature":null
+                              }
+                           ],
+                           "id":{},
+                           "discounts":[],
+                           "taxes":[],
+                           "customerId":{},
+                           "totalWeight":2.5000,
+                           "topLevelTax":0.00,
+                           "subTotalLessDiscount":36.0000,
+                           "total":36.00,
+                           "detailCount":1,
+                           "customerSortName":"Place Shanon",
+                           "shippingAddressId":{},
+                           "billingAddressId":{},
+                           "shippingRequired":true,
+                           "hasShippingMethod":false,
+                           "shippingMethod":null,
+                           "shippingMethodCartItem":null,
+                           "shippingCost":0.0,
+                           "cartToken":"4e9f904c-eaff-46f0-b593-dfef106a1b85",
+                           "hasOpenInvoice":false,
+                           "sourceCodeId":null
+                        }
+                     },
+                     "view":"_OrderSummary",
+                     "action":"OrderSummary",
+                     "url":"/checkout/OrderSummary"
+                  },
+                  {  
+                     "name":"billing-address",
+                     "index":1,
+                     "title":"Billing Address",
+                     "definition":{  
+                        "isPrimary":false,
+                        "useForShipping":false,
+                        "billingAddressId":null,
+                        "primaryAddressId":null,
+                        "addressType":null,
+                        "line1":null,
+                        "line2":null,
+                        "line3":null,
+                        "country":null,
+                        "state":null,
+                        "city":null,
+                        "postCode":null,
+                        "mailingLabelHtml":null,
+                        "countries":null,
+                        "countryItems":null,
+                        "stateItems":null,
+                        "billingAddressItems":null,
+                        "addresses":null,
+                        "addressTypeItems":null,
+                        "isNew":false,
+                        "editMode":false,
+                        "emailAddress":null,
+                        "printAndMailUrl":null,
+                        "continueActionText":null,
+                        "printAndMailActionText":null,
+                        "cartState":{  
+                           "serviceCharge":0.00,
+                           "cartItems":[  
+                              {  
+                                 "cartItemId":{},
+                                 "productTypeCode":"Publication",
+                                 "showOnInvoice":false,
+                                 "canChangeQty":true,
+                                 "canChangeQtyFlagText":"",
+                                 "packageGroupingId":{},
+                                 "previousInvoiceId":null,
+                                 "previousInvoiceCode":"",
+                                 "previousInvoiceTransactionDate":"0001-01-01T00:00:00",
+                                 "isFromPreviousInvoice":false,
+                                 "itemName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "id":{},
+                                 "backordered":false,
+                                 "invoiceDetailTypeCode":"Product",
+                                 "invoiceDetailType":"Product",
+                                 "amount":36.00,
+                                 "balance":0.00,
+                                 "unitPrice":36.00,
+                                 "qty":1.00,
+                                 "subTotal":36.0000,
+                                 "tax":0.00,
+                                 "discount":0.00,
+                                 "unitPriceLessDiscount":36.00,
+                                 "subTotalLessDiscount":36.0000,
+                                 "isDiscounted":false,
+                                 "total":36.00,
+                                 "productId":{},
+                                 "productName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "productCode":"0175",
+                                 "priceId":{},
+                                 "priceName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "parentEntityId":null,
+                                 "changeControlSignature":null
+                              }
+                           ],
+                           "id":{},
+                           "discounts":[],
+                           "taxes":[],
+                           "customerId":{},
+                           "totalWeight":2.5000,
+                           "topLevelTax":0.00,
+                           "subTotalLessDiscount":36.0000,
+                           "total":36.00,
+                           "detailCount":1,
+                           "customerSortName":"Place Shanon",
+                           "shippingAddressId":{},
+                           "billingAddressId":{},
+                           "shippingRequired":true,
+                           "hasShippingMethod":false,
+                           "shippingMethod":null,
+                           "shippingMethodCartItem":null,
+                           "shippingCost":0.0,
+                           "cartToken":"4e9f904c-eaff-46f0-b593-dfef106a1b85",
+                           "hasOpenInvoice":false,
+                           "sourceCodeId":null
+                        }
+                     },
+                     "view":"_BillingAddress",
+                     "action":"BillingAddress",
+                     "url":"/checkout/BillingAddress"
+                  },
+                  {  
+                     "name":"shipping-address",
+                     "index":2,
+                     "title":"Shipping Address",
+                     "definition":{  
+                        "shippingAddressId":null,
+                        "primaryAddressId":null,
+                        "addressType":null,
+                        "line1":null,
+                        "line2":null,
+                        "line3":null,
+                        "country":null,
+                        "state":null,
+                        "city":null,
+                        "postCode":null,
+                        "mailingLabelHtml":null,
+                        "shippingAddressItems":null,
+                        "countries":null,
+                        "stateItems":null,
+                        "addresses":null,
+                        "countryItems":null,
+                        "addressTypeItems":null,
+                        "isNew":false,
+                        "editMode":false,
+                        "cartState":{  
+                           "serviceCharge":0.00,
+                           "cartItems":[  
+                              {  
+                                 "cartItemId":{  
+            
+                                 },
+                                 "productTypeCode":"Publication",
+                                 "showOnInvoice":false,
+                                 "canChangeQty":true,
+                                 "canChangeQtyFlagText":"",
+                                 "packageGroupingId":{  
+            
+                                 },
+                                 "previousInvoiceId":null,
+                                 "previousInvoiceCode":"",
+                                 "previousInvoiceTransactionDate":"0001-01-01T00:00:00",
+                                 "isFromPreviousInvoice":false,
+                                 "itemName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "id":{  
+            
+                                 },
+                                 "backordered":false,
+                                 "invoiceDetailTypeCode":"Product",
+                                 "invoiceDetailType":"Product",
+                                 "amount":36.00,
+                                 "balance":0.00,
+                                 "unitPrice":36.00,
+                                 "qty":1.00,
+                                 "subTotal":36.0000,
+                                 "tax":0.00,
+                                 "discount":0.00,
+                                 "unitPriceLessDiscount":36.00,
+                                 "subTotalLessDiscount":36.0000,
+                                 "isDiscounted":false,
+                                 "total":36.00,
+                                 "productId":{  
+            
+                                 },
+                                 "productName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "productCode":"0175",
+                                 "priceId":{  
+            
+                                 },
+                                 "priceName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "parentEntityId":null,
+                                 "changeControlSignature":null
+                              }
+                           ],
+                           "id":{  
+            
+                           },
+                           "discounts":[  
+            
+                           ],
+                           "taxes":[  
+            
+                           ],
+                           "customerId":{  
+            
+                           },
+                           "totalWeight":2.5000,
+                           "topLevelTax":0.00,
+                           "subTotalLessDiscount":36.0000,
+                           "total":36.00,
+                           "detailCount":1,
+                           "customerSortName":"Place Shanon",
+                           "shippingAddressId":{  
+            
+                           },
+                           "billingAddressId":{  
+            
+                           },
+                           "shippingRequired":true,
+                           "hasShippingMethod":false,
+                           "shippingMethod":null,
+                           "shippingMethodCartItem":null,
+                           "shippingCost":0.0,
+                           "cartToken":"4e9f904c-eaff-46f0-b593-dfef106a1b85",
+                           "hasOpenInvoice":false,
+                           "sourceCodeId":null
+                        }
+                     },
+                     "view":"_ShippingAddress",
+                     "action":"ShippingAddress",
+                     "url":"/checkout/ShippingAddress"
+                  },
+                  {  
+                     "name":"shipping-method",
+                     "index":3,
+                     "title":"Shipping Method",
+                     "definition":{  
+                        "shippingMethodKey":null,
+                        "shippingMethodItems":null,
+                        "shippingMethodDisplayName":null,
+                        "shippingMethodPriceString":null,
+                        "cartState":{  
+                           "serviceCharge":0.00,
+                           "cartItems":[  
+                              {  
+                                 "cartItemId":{  
+            
+                                 },
+                                 "productTypeCode":"Publication",
+                                 "showOnInvoice":false,
+                                 "canChangeQty":true,
+                                 "canChangeQtyFlagText":"",
+                                 "packageGroupingId":{  
+            
+                                 },
+                                 "previousInvoiceId":null,
+                                 "previousInvoiceCode":"",
+                                 "previousInvoiceTransactionDate":"0001-01-01T00:00:00",
+                                 "isFromPreviousInvoice":false,
+                                 "itemName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "id":{  
+            
+                                 },
+                                 "backordered":false,
+                                 "invoiceDetailTypeCode":"Product",
+                                 "invoiceDetailType":"Product",
+                                 "amount":36.00,
+                                 "balance":0.00,
+                                 "unitPrice":36.00,
+                                 "qty":1.00,
+                                 "subTotal":36.0000,
+                                 "tax":0.00,
+                                 "discount":0.00,
+                                 "unitPriceLessDiscount":36.00,
+                                 "subTotalLessDiscount":36.0000,
+                                 "isDiscounted":false,
+                                 "total":36.00,
+                                 "productId":{  
+            
+                                 },
+                                 "productName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "productCode":"0175",
+                                 "priceId":{  
+            
+                                 },
+                                 "priceName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "parentEntityId":null,
+                                 "changeControlSignature":null
+                              }
+                           ],
+                           "id":{  
+            
+                           },
+                           "discounts":[  
+            
+                           ],
+                           "taxes":[  
+            
+                           ],
+                           "customerId":{  
+            
+                           },
+                           "totalWeight":2.5000,
+                           "topLevelTax":0.00,
+                           "subTotalLessDiscount":36.0000,
+                           "total":36.00,
+                           "detailCount":1,
+                           "customerSortName":"Place Shanon",
+                           "shippingAddressId":{  
+            
+                           },
+                           "billingAddressId":{  
+            
+                           },
+                           "shippingRequired":true,
+                           "hasShippingMethod":false,
+                           "shippingMethod":null,
+                           "shippingMethodCartItem":null,
+                           "shippingCost":0.0,
+                           "cartToken":"4e9f904c-eaff-46f0-b593-dfef106a1b85",
+                           "hasOpenInvoice":false,
+                           "sourceCodeId":null
+                        }
+                     },
+                     "view":"_ShippingMethod",
+                     "action":"ShippingMethod",
+                     "url":"/checkout/ShippingMethod"
+                  },
+                  {  
+                     "name":"payment-method",
+                     "index":4,
+                     "title":"Payment Method",
+                     "definition":{  
+                        "cardholderName":null,
+                        "cardNumber":null,
+                        "cVV":null,
+                        "expireMonthString":null,
+                        "expireMonthItems":[  
+            
+                        ],
+                        "expireMonth":1,
+                        "expireYearString":null,
+                        "expireYearItems":[  
+            
+                        ],
+                        "expireYear":0,
+                        "lastFourCreditCardNumber":null,
+                        "cost":0.0,
+                        "maskedCreditCardNumber":null,
+                        "cardType":null,
+                        "cartState":{  
+                           "serviceCharge":0.00,
+                           "cartItems":[  
+                              {  
+                                 "cartItemId":{  
+            
+                                 },
+                                 "productTypeCode":"Publication",
+                                 "showOnInvoice":false,
+                                 "canChangeQty":true,
+                                 "canChangeQtyFlagText":"",
+                                 "packageGroupingId":{  
+            
+                                 },
+                                 "previousInvoiceId":null,
+                                 "previousInvoiceCode":"",
+                                 "previousInvoiceTransactionDate":"0001-01-01T00:00:00",
+                                 "isFromPreviousInvoice":false,
+                                 "itemName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "id":{  
+            
+                                 },
+                                 "backordered":false,
+                                 "invoiceDetailTypeCode":"Product",
+                                 "invoiceDetailType":"Product",
+                                 "amount":36.00,
+                                 "balance":0.00,
+                                 "unitPrice":36.00,
+                                 "qty":1.00,
+                                 "subTotal":36.0000,
+                                 "tax":0.00,
+                                 "discount":0.00,
+                                 "unitPriceLessDiscount":36.00,
+                                 "subTotalLessDiscount":36.0000,
+                                 "isDiscounted":false,
+                                 "total":36.00,
+                                 "productId":{  
+            
+                                 },
+                                 "productName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "productCode":"0175",
+                                 "priceId":{  
+            
+                                 },
+                                 "priceName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "parentEntityId":null,
+                                 "changeControlSignature":null
+                              }
+                           ],
+                           "id":{  
+            
+                           },
+                           "discounts":[  
+            
+                           ],
+                           "taxes":[  
+            
+                           ],
+                           "customerId":{  
+            
+                           },
+                           "totalWeight":2.5000,
+                           "topLevelTax":0.00,
+                           "subTotalLessDiscount":36.0000,
+                           "total":36.00,
+                           "detailCount":1,
+                           "customerSortName":"Place Shanon",
+                           "shippingAddressId":{  
+            
+                           },
+                           "billingAddressId":{  
+            
+                           },
+                           "shippingRequired":true,
+                           "hasShippingMethod":false,
+                           "shippingMethod":null,
+                           "shippingMethodCartItem":null,
+                           "shippingCost":0.0,
+                           "cartToken":"4e9f904c-eaff-46f0-b593-dfef106a1b85",
+                           "hasOpenInvoice":false,
+                           "sourceCodeId":null
+                        }
+                     },
+                     "view":"_PaymentMethod",
+                     "action":"PaymentMethod",
+                     "url":"/checkout/PaymentMethod"
+                  },
+                  {  
+                     "name":"confirmation",
+                     "index":5,
+                     "title":"Confirmation",
+                     "definition":{  
+                        "subTotalString":null,
+                        "discounted":false,
+                        "discountAmountString":null,
+                        "shippingPriceString":null,
+                        "taxString":null,
+                        "totalString":null,
+                        "cartState":{  
+                           "serviceCharge":0.00,
+                           "cartItems":[  
+                              {  
+                                 "cartItemId":{},
+                                 "productTypeCode":"Publication",
+                                 "showOnInvoice":false,
+                                 "canChangeQty":true,
+                                 "canChangeQtyFlagText":"",
+                                 "packageGroupingId":{},
+                                 "previousInvoiceId":null,
+                                 "previousInvoiceCode":"",
+                                 "previousInvoiceTransactionDate":"0001-01-01T00:00:00",
+                                 "isFromPreviousInvoice":false,
+                                 "itemName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "id":{},
+                                 "backordered":false,
+                                 "invoiceDetailTypeCode":"Product",
+                                 "invoiceDetailType":"Product",
+                                 "amount":36.00,
+                                 "balance":0.00,
+                                 "unitPrice":36.00,
+                                 "qty":1.00,
+                                 "subTotal":36.0000,
+                                 "tax":0.00,
+                                 "discount":0.00,
+                                 "unitPriceLessDiscount":36.00,
+                                 "subTotalLessDiscount":36.0000,
+                                 "isDiscounted":false,
+                                 "total":36.00,
+                                 "productId":{},
+                                 "productName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "productCode":"0175",
+                                 "priceId":{},
+                                 "priceName":"Carry the Flame: The History of the American Dietetic Association",
+                                 "parentEntityId":null,
+                                 "changeControlSignature":null
+                              }
+                           ],
+                           "id":{},
+                           "discounts":[],
+                           "taxes":[],
+                           "customerId":{},
+                           "totalWeight":2.5000,
+                           "topLevelTax":0.00,
+                           "subTotalLessDiscount":36.0000,
+                           "total":36.00,
+                           "detailCount":1,
+                           "customerSortName":"Place Shanon",
+                           "shippingAddressId":{},
+                           "billingAddressId":{},
+                           "shippingRequired":true,
+                           "hasShippingMethod":false,
+                           "shippingMethod":null,
+                           "shippingMethodCartItem":null,
+                           "shippingCost":0.0,
+                           "cartToken":"4e9f904c-eaff-46f0-b593-dfef106a1b85",
+                           "hasOpenInvoice":false,
+                           "sourceCodeId":null
+                        }
+                     },
+                     "view":"_Confirmation",
+                     "action":"Confirmation",
+                     "url":"/checkout/Confirmation"
+                  }
+               ],
+               "currentStep":{  
+                  "name":"order-summary",
+                  "index":0,
+                  "title":"Order Summary",
+                  "definition":{  
+                     "itemCount":0,
+                     "totalPrice":0.0,
+                     "totalPriceString":"$0.00",
+                     "items":null,
+                     "subTotalString":null,
+                     "taxString":null,
+                     "totalString":null,
+                     "cartState":{  
+                        "serviceCharge":0.00,
+                        "cartItems":[  
+                           {  
+                              "cartItemId":{},
+                              "productTypeCode":"Publication",
+                              "showOnInvoice":false,
+                              "canChangeQty":true,
+                              "canChangeQtyFlagText":"",
+                              "packageGroupingId":{},
+                              "previousInvoiceId":null,
+                              "previousInvoiceCode":"",
+                              "previousInvoiceTransactionDate":"0001-01-01T00:00:00",
+                              "isFromPreviousInvoice":false,
+                              "itemName":"Carry the Flame: The History of the American Dietetic Association",
+                              "id":{},
+                              "backordered":false,
+                              "invoiceDetailTypeCode":"Product",
+                              "invoiceDetailType":"Product",
+                              "amount":36.00,
+                              "balance":0.00,
+                              "unitPrice":36.00,
+                              "qty":1.00,
+                              "subTotal":36.0000,
+                              "tax":0.00,
+                              "discount":0.00,
+                              "unitPriceLessDiscount":36.00,
+                              "subTotalLessDiscount":36.0000,
+                              "isDiscounted":false,
+                              "total":36.00,
+                              "productId":{},
+                              "productName":"Carry the Flame: The History of the American Dietetic Association",
+                              "productCode":"0175",
+                              "priceId":{},
+                              "priceName":"Carry the Flame: The History of the American Dietetic Association",
+                              "parentEntityId":null,
+                              "changeControlSignature":null
+                           }
+                        ],
+                        "id":{},
+                        "discounts":[],
+                        "taxes":[],
+                        "customerId":{},
+                        "totalWeight":2.5000,
+                        "topLevelTax":0.00,
+                        "subTotalLessDiscount":36.0000,
+                        "total":36.00,
+                        "detailCount":1,
+                        "customerSortName":"Place Shanon",
+                        "shippingAddressId":{},
+                        "billingAddressId":{},
+                        "shippingRequired":true,
+                        "hasShippingMethod":false,
+                        "shippingMethod":null,
+                        "shippingMethodCartItem":null,
+                        "shippingCost":0.0,
+                        "cartToken":"4e9f904c-eaff-46f0-b593-dfef106a1b85",
+                        "hasOpenInvoice":false,
+                        "sourceCodeId":null
+                     }
+                  },
+                  "view":"_OrderSummary",
+                  "action":"OrderSummary",
+                  "url":"/checkout/OrderSummary"
+               }
+            }
+
+## Order Summary [/checkout/OrderSummary?_={id}]
+### Init Order Summary [GET]
+When user enters area to begin the checkout process, this call is made to get back the order summary.
+
++ Parameters
+    + id (string, required) - Random id
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+               "ItemCount":0,
+               "TotalPrice":36.00,
+               "TotalPriceString":"$36.00",
+               "Items":[  
+                  {  
+                     "CartItemId":{},
+                     "Name":"Carry the Flame: The History of the American Dietetic Association",
+                     "ProductKey":{},
+                     "CanChangeQty":true,
+                     "Qty":1,
+                     "UnitPrice":36.00,
+                     "SubTotalLessDiscount":36.0000,
+                     "DiscountAmount":0.0000,
+                     "UnitPriceString":"$36.00",
+                     "SubTotalLessDiscountString":"$36.00",
+                     "ProductDescription":null,
+                     "ImageUrl":"/~/media/eatrightstoreimages/gifts and posters/academy history/carrytheflame.ashx",
+                     "Remove":false,
+                     "PreviousInvoiceCode":"",
+                     "PackageGroupingId":"40dce5cb-27b8-4034-8b63-ef46c22c7b0f",
+                     "IsChapterMembershipItem":false,
+                     "IsChapterPromotionSurcharge":false
+                  }
+               ],
+               "SubTotalString":"$36.00",
+               "TaxString":"$0.00",
+               "TotalString":null,
+               "CartState":null
+            }
+            
+### Product Order Summary [POST]
+When a user presses "continue" after __step 1__, this call gets posted before getting the order summary again.
+
++ Request (application/x-www-form-urlencoded; charset=UTF-8)
+
+        {  
+           "ItemCount":0,
+           "TotalPrice":36,
+           "TotalPriceString":"$36.00",
+           "Items":[  
+              {  
+                 "Name":"Carry the Flame: The History of the American Dietetic Association",
+                 "CanChangeQty":true,
+                 "Qty":1,
+                 "UnitPrice":36,
+                 "SubTotalLessDiscount":36,
+                 "DiscountAmount":0,
+                 "UnitPriceString":"$36.00",
+                 "SubTotalLessDiscountString":"$36.00",
+                 "ProductDescription":"",
+                 "ImageUrl":"/~/media/eatrightstoreimages/gifts and posters/academy history/carrytheflame.ashx",
+                 "Remove":false,
+                 "PreviousInvoiceCode":"",
+                 "PackageGroupingId":"40dce5cb-27b8-4034-8b63-ef46c22c7b0f",
+                 "IsChapterMembershipItem":false,
+                 "IsChapterPromotionSurcharge":false
+              }
+           ],
+           "SubTotalString":"$36.00",
+           "TaxString":"$0.00",
+           "TotalString":"",
+           "CartState":""
+        }
+
++ Response 200 (application/json)
+
+    + Body
+
+            {  
+               "successful":true,
+               "index":1,
+               "name":"billing-address",
+               "errors":[]
+            }
+            
+## Billing Address [/checkout/BillngAddress?_={id}]
+### Get Billing Address [GET]
+Checkout step 2 to fill out or edit billing address.
+
+__Called after getting order summary success__
+
+__After getting the Billing Address, call http://docs.academy7.apiary.io/#reference/store/order-summary/product-order-summary__
+
++ Parameters
+    + id (string, required) - Random id
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {  
+               "IsPrimary":false,
+               "UseForShipping":false,
+               "BillingAddressId":"56005564-3d29-47d2-b9ec-fcb1c69373b4",
+               "PrimaryAddressId":"56005564-3d29-47d2-b9ec-fcb1c69373b4",
+               "AddressType":"a6566b3c-9a6d-49d6-b683-8a1389117009",
+               "Line1":"28 Damrell Street",
+               "Line2":"Suite 300",
+               "Line3":"",
+               "Country":"UNITED STATES",
+               "State":"MA",
+               "City":"Boston",
+               "PostCode":"02127",
+               "MailingLabelHtml":"28 DAMRELL STREET\u003cBR/\u003eSUITE 300\u003cBR/\u003eBOSTON, MA 02127\u003cBR/\u003eUNITED STATES",
+               "Countries":null,
+               "CountryItems":[  
+                  {  
+                     "Selected":false,
+                     "Text":"ABKHAZIA",
+                     "Value":"ABKHAZIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"AFGHANISTAN",
+                     "Value":"AFGHANISTAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"AKROTIRI AND DHEKELIA",
+                     "Value":"AKROTIRI AND DHEKELIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ÅLAND",
+                     "Value":"ÅLAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ALBANIA",
+                     "Value":"ALBANIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ALGERIA",
+                     "Value":"ALGERIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"AMERICAN SAMOA",
+                     "Value":"AMERICAN SAMOA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ANDORRA",
+                     "Value":"ANDORRA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ANGOLA",
+                     "Value":"ANGOLA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ANGUILLA",
+                     "Value":"ANGUILLA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ANTARCTICA",
+                     "Value":"ANTARCTICA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ANTIGUA",
+                     "Value":"ANTIGUA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ARGENTINA",
+                     "Value":"ARGENTINA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ARMENIA",
+                     "Value":"ARMENIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ARUBA",
+                     "Value":"ARUBA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ASCENSION",
+                     "Value":"ASCENSION"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"AUSTRALIA",
+                     "Value":"AUSTRALIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"AUSTRIA",
+                     "Value":"AUSTRIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"AZERBAIJAN",
+                     "Value":"AZERBAIJAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BAHAMAS",
+                     "Value":"BAHAMAS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BAHRAIN",
+                     "Value":"BAHRAIN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BANGLADESH",
+                     "Value":"BANGLADESH"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BARBADOS",
+                     "Value":"BARBADOS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BELARUS",
+                     "Value":"BELARUS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BELGIUM",
+                     "Value":"BELGIUM"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BELIZE",
+                     "Value":"BELIZE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BENIN",
+                     "Value":"BENIN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BERMUDA",
+                     "Value":"BERMUDA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BHUTAN",
+                     "Value":"BHUTAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BOLIVIA",
+                     "Value":"BOLIVIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BOSNIA AND HERZEGOVINA",
+                     "Value":"BOSNIA AND HERZEGOVINA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BOTSWANA",
+                     "Value":"BOTSWANA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BRAZIL",
+                     "Value":"BRAZIL"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BRITISH VIRGIN ISLANDS",
+                     "Value":"BRITISH VIRGIN ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BRUNEI",
+                     "Value":"BRUNEI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BULGARIA",
+                     "Value":"BULGARIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BURKINA FASO",
+                     "Value":"BURKINA FASO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"BURUNDI",
+                     "Value":"BURUNDI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CAMBODIA",
+                     "Value":"CAMBODIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CAMEROON",
+                     "Value":"CAMEROON"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CANADA",
+                     "Value":"CANADA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CAPE VERDE",
+                     "Value":"CAPE VERDE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CAYMAN ISLANDS",
+                     "Value":"CAYMAN ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CENTRAL AFRICAN REPUBLIC",
+                     "Value":"CENTRAL AFRICAN REPUBLIC"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CHAD",
+                     "Value":"CHAD"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CHILE",
+                     "Value":"CHILE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CHINA",
+                     "Value":"CHINA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CHRISTMAS ISLAND",
+                     "Value":"CHRISTMAS ISLAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"COCOS (KEELING) ISLANDS",
+                     "Value":"COCOS (KEELING) ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"COLOMBIA",
+                     "Value":"COLOMBIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"COMOROS",
+                     "Value":"COMOROS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CONGO",
+                     "Value":"CONGO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"COOK ISLANDS",
+                     "Value":"COOK ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"COSTA RICA",
+                     "Value":"COSTA RICA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Côte d\u0027Ivoire",
+                     "Value":"Côte d\u0027Ivoire"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CROATIA",
+                     "Value":"CROATIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CUBA",
+                     "Value":"CUBA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CYPRUS",
+                     "Value":"CYPRUS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"CZECH REPUBLIC",
+                     "Value":"CZECH REPUBLIC"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"DENMARK",
+                     "Value":"DENMARK"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"DIEGO GARCIA",
+                     "Value":"DIEGO GARCIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"DJIBOUTI",
+                     "Value":"DJIBOUTI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"DOMINICA",
+                     "Value":"DOMINICA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"DOMINICAN REPUBLIC",
+                     "Value":"DOMINICAN REPUBLIC"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"EAST TIMOR",
+                     "Value":"EAST TIMOR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ECUADOR",
+                     "Value":"ECUADOR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"EGYPT",
+                     "Value":"EGYPT"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"EL SALVADOR",
+                     "Value":"EL SALVADOR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"EQUATORIAL GUINEA",
+                     "Value":"EQUATORIAL GUINEA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ERITREA",
+                     "Value":"ERITREA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ESTONIA",
+                     "Value":"ESTONIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ETHIOPIA",
+                     "Value":"ETHIOPIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"FALKLAND ISLANDS",
+                     "Value":"FALKLAND ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"FAROE ISLANDS",
+                     "Value":"FAROE ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"FIJI",
+                     "Value":"FIJI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"FINLAND",
+                     "Value":"FINLAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"FRANCE",
+                     "Value":"FRANCE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"FRENCH ANTILLES",
+                     "Value":"FRENCH ANTILLES"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"FRENCH GUIANA",
+                     "Value":"FRENCH GUIANA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"FRENCH POLYNESIA",
+                     "Value":"FRENCH POLYNESIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GABON",
+                     "Value":"GABON"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GAMBIA",
+                     "Value":"GAMBIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GEORGIA",
+                     "Value":"GEORGIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GERMANY",
+                     "Value":"GERMANY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GHANA",
+                     "Value":"GHANA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GIBRALTAR",
+                     "Value":"GIBRALTAR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GREECE",
+                     "Value":"GREECE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GREENLAND",
+                     "Value":"GREENLAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GRENADA",
+                     "Value":"GRENADA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GUATEMALA",
+                     "Value":"GUATEMALA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GUI",
+                     "Value":"GUI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GUINEA",
+                     "Value":"GUINEA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GUINEA-BISSAU",
+                     "Value":"GUINEA-BISSAU"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"GUYANA",
+                     "Value":"GUYANA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"HAITI",
+                     "Value":"HAITI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"HONDURAS",
+                     "Value":"HONDURAS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"HONG KONG",
+                     "Value":"HONG KONG"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"HUNGARY",
+                     "Value":"HUNGARY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ICELAND",
+                     "Value":"ICELAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"INDIA",
+                     "Value":"INDIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"INDONESIA",
+                     "Value":"INDONESIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"IRAN",
+                     "Value":"IRAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"IRAQ",
+                     "Value":"IRAQ"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"IRELAND",
+                     "Value":"IRELAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ISLE OF MAN",
+                     "Value":"ISLE OF MAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ISRAEL",
+                     "Value":"ISRAEL"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ITALY",
+                     "Value":"ITALY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"JAMAICA",
+                     "Value":"JAMAICA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"JAPAN",
+                     "Value":"JAPAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"JERSEY",
+                     "Value":"JERSEY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"JORDAN",
+                     "Value":"JORDAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"KAZAKHSTAN",
+                     "Value":"KAZAKHSTAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"KENYA",
+                     "Value":"KENYA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"KIRIBATI",
+                     "Value":"KIRIBATI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"KOSOVO",
+                     "Value":"KOSOVO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"KUWAIT",
+                     "Value":"KUWAIT"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"KYRGYZSTAN",
+                     "Value":"KYRGYZSTAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"LAOS",
+                     "Value":"LAOS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"LATVIA",
+                     "Value":"LATVIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"LEBANON",
+                     "Value":"LEBANON"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"LESOTHO",
+                     "Value":"LESOTHO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"LIBERIA",
+                     "Value":"LIBERIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"LIBYA",
+                     "Value":"LIBYA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"LIECHTENSTEIN",
+                     "Value":"LIECHTENSTEIN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"LITHUANIA",
+                     "Value":"LITHUANIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"LUXEMBOURG",
+                     "Value":"LUXEMBOURG"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MACAO",
+                     "Value":"MACAO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MACEDONIA",
+                     "Value":"MACEDONIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MADAGASCAR",
+                     "Value":"MADAGASCAR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MALAWI",
+                     "Value":"MALAWI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MALAYSIA",
+                     "Value":"MALAYSIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MALDIVES",
+                     "Value":"MALDIVES"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MALI",
+                     "Value":"MALI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MALTA",
+                     "Value":"MALTA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MARSHALL ISLANDS",
+                     "Value":"MARSHALL ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MARTINIQUE",
+                     "Value":"MARTINIQUE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MAURITANIA",
+                     "Value":"MAURITANIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MAURITIUS",
+                     "Value":"MAURITIUS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MAYOTTE",
+                     "Value":"MAYOTTE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MEXICO",
+                     "Value":"MEXICO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MICRONESIA",
+                     "Value":"MICRONESIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MOLDOVA",
+                     "Value":"MOLDOVA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MONACO",
+                     "Value":"MONACO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MONGOLIA",
+                     "Value":"MONGOLIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MONTENEGRO",
+                     "Value":"MONTENEGRO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MONTSERRAT",
+                     "Value":"MONTSERRAT"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MOROCCO",
+                     "Value":"MOROCCO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MOZAMBIQUE",
+                     "Value":"MOZAMBIQUE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"MYANMAR",
+                     "Value":"MYANMAR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NAGORNO-KARABAKH",
+                     "Value":"NAGORNO-KARABAKH"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NAMIBIA",
+                     "Value":"NAMIBIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NAURU",
+                     "Value":"NAURU"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NEPAL",
+                     "Value":"NEPAL"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NETHERLANDS",
+                     "Value":"NETHERLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NETHERLANDS ANTILLES",
+                     "Value":"NETHERLANDS ANTILLES"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NEW CALEDONIA",
+                     "Value":"NEW CALEDONIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NEW ZEALAND",
+                     "Value":"NEW ZEALAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NICARAGUA",
+                     "Value":"NICARAGUA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NIGER",
+                     "Value":"NIGER"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NIGERIA",
+                     "Value":"NIGERIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NIUE",
+                     "Value":"NIUE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NORFOLK ISLAND",
+                     "Value":"NORFOLK ISLAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NORTH KOREA",
+                     "Value":"NORTH KOREA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NORTHERN CYPRUS",
+                     "Value":"NORTHERN CYPRUS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NORTHERN MARIANA ISLANDS",
+                     "Value":"NORTHERN MARIANA ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"NORWAY",
+                     "Value":"NORWAY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"OMAN",
+                     "Value":"OMAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PAKISTAN",
+                     "Value":"PAKISTAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PALAU",
+                     "Value":"PALAU"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PALESTINE",
+                     "Value":"PALESTINE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PANAMA",
+                     "Value":"PANAMA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PAPUA NEW GUINEA",
+                     "Value":"PAPUA NEW GUINEA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PARAGUAY",
+                     "Value":"PARAGUAY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PEOPLE\u0027S REPUBLIC OF CONGO",
+                     "Value":"PEOPLE\u0027S REPUBLIC OF CONGO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PERU",
+                     "Value":"PERU"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PHILIPPINES",
+                     "Value":"PHILIPPINES"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PITCAIRN ISLANDS",
+                     "Value":"PITCAIRN ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"POLAND",
+                     "Value":"POLAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"PORTUGAL",
+                     "Value":"PORTUGAL"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"QATAR",
+                     "Value":"QATAR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"REUNION",
+                     "Value":"REUNION"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ROMANIA",
+                     "Value":"ROMANIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"RUSSIA",
+                     "Value":"RUSSIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"RWANDA",
+                     "Value":"RWANDA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SAINT BARTHéLEMY",
+                     "Value":"SAINT BARTHéLEMY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SAINT HELENA",
+                     "Value":"SAINT HELENA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SAINT KITTS AND NEVIS",
+                     "Value":"SAINT KITTS AND NEVIS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SAINT LUCIA",
+                     "Value":"SAINT LUCIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SAINT MARTIN",
+                     "Value":"SAINT MARTIN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SAINT PIERRE AND MIQUELON",
+                     "Value":"SAINT PIERRE AND MIQUELON"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Saint Vincent and the Grenadines",
+                     "Value":"Saint Vincent and the Grenadines"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SAMOA",
+                     "Value":"SAMOA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SAN MARINO",
+                     "Value":"SAN MARINO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Sao Tome and Principe",
+                     "Value":"Sao Tome and Principe"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SAUDI ARABIA",
+                     "Value":"SAUDI ARABIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SENEGAL",
+                     "Value":"SENEGAL"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SERBIA",
+                     "Value":"SERBIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SEYCHELLES",
+                     "Value":"SEYCHELLES"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SIERRA LEONE",
+                     "Value":"SIERRA LEONE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SINGAPORE",
+                     "Value":"SINGAPORE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SLOVAKIA",
+                     "Value":"SLOVAKIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SLOVENIA",
+                     "Value":"SLOVENIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SOLOMON ISLANDS",
+                     "Value":"SOLOMON ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SOMALIA",
+                     "Value":"SOMALIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SOMALILAND",
+                     "Value":"SOMALILAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SOUTH AFRICA",
+                     "Value":"SOUTH AFRICA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SOUTH KOREA",
+                     "Value":"SOUTH KOREA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SOUTH OSSETIA",
+                     "Value":"SOUTH OSSETIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SPAIN",
+                     "Value":"SPAIN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SRI LANKA",
+                     "Value":"SRI LANKA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SUDAN",
+                     "Value":"SUDAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SURINAME",
+                     "Value":"SURINAME"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SVALBARD",
+                     "Value":"SVALBARD"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SWAZILAND",
+                     "Value":"SWAZILAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SWEDEN",
+                     "Value":"SWEDEN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SWITZERLAND",
+                     "Value":"SWITZERLAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"SYRIA",
+                     "Value":"SYRIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TAIWAN",
+                     "Value":"TAIWAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TAJIKISTAN",
+                     "Value":"TAJIKISTAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TANZANIA",
+                     "Value":"TANZANIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"THAILAND",
+                     "Value":"THAILAND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TOGO",
+                     "Value":"TOGO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TOKELAU",
+                     "Value":"TOKELAU"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TONGA",
+                     "Value":"TONGA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TRANSNISTRIA",
+                     "Value":"TRANSNISTRIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TRINIDAD AND TOBAGO",
+                     "Value":"TRINIDAD AND TOBAGO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TRISTAN DA CUNHA",
+                     "Value":"TRISTAN DA CUNHA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TUNISIA",
+                     "Value":"TUNISIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TURKEY",
+                     "Value":"TURKEY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TURKMENISTAN",
+                     "Value":"TURKMENISTAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TURKS and CAICOS ISLANDS",
+                     "Value":"TURKS and CAICOS ISLANDS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"TUVALU",
+                     "Value":"TUVALU"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"UGANDA",
+                     "Value":"UGANDA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"UKRAINE",
+                     "Value":"UKRAINE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"UNITED ARAB EMIRATES",
+                     "Value":"UNITED ARAB EMIRATES"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"UNITED KINGDOM",
+                     "Value":"UNITED KINGDOM"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"UNITED STATES",
+                     "Value":"UNITED STATES"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"URUGUAY",
+                     "Value":"URUGUAY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"UZBEKISTAN",
+                     "Value":"UZBEKISTAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"VANUATU",
+                     "Value":"VANUATU"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"VATICAN",
+                     "Value":"VATICAN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"VENEZUELA",
+                     "Value":"VENEZUELA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"VIETNAM",
+                     "Value":"VIETNAM"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"WALLIS and FUTUNA",
+                     "Value":"WALLIS and FUTUNA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"WESTERN SAHARA",
+                     "Value":"WESTERN SAHARA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"YEMEN",
+                     "Value":"YEMEN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ZAMBIA",
+                     "Value":"ZAMBIA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"ZIMBABWE",
+                     "Value":"ZIMBABWE"
+                  }
+               ],
+               "StateItems":[  
+                  {  
+                     "Selected":false,
+                     "Text":"Armed Forces Americas (except Canada)",
+                     "Value":"AA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Armed Forces Africa, Canada, Europe and Middle East",
+                     "Value":"AE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Alaska",
+                     "Value":"AK"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Alabama",
+                     "Value":"AL"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Armed Forces Pacific",
+                     "Value":"AP"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Arkansas",
+                     "Value":"AR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"American Samoa",
+                     "Value":"AS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Arizona",
+                     "Value":"AZ"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"California",
+                     "Value":"CA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Colorado",
+                     "Value":"CO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Connecticut",
+                     "Value":"CT"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"District of Columbia",
+                     "Value":"DC"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Delaware",
+                     "Value":"DE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Diplomatic Pouch Services",
+                     "Value":"DP"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Florida",
+                     "Value":"FL"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Fleet Post Office",
+                     "Value":"FP"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Georgia",
+                     "Value":"GA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Guam",
+                     "Value":"GU"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Hawaii",
+                     "Value":"HI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Iowa",
+                     "Value":"IA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Idaho",
+                     "Value":"ID"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Illinois",
+                     "Value":"IL"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Indiana",
+                     "Value":"IN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Kansas",
+                     "Value":"KS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Kentucky",
+                     "Value":"KY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Louisiana",
+                     "Value":"LA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Massachusetts",
+                     "Value":"MA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Maryland",
+                     "Value":"MD"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Maine",
+                     "Value":"ME"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Michigan",
+                     "Value":"MI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Minnesota",
+                     "Value":"MN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Missouri",
+                     "Value":"MO"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Northern Mariana Islands",
+                     "Value":"MP"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Mississippi",
+                     "Value":"MS"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Montana",
+                     "Value":"MT"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"North Carolina",
+                     "Value":"NC"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"North Dakota",
+                     "Value":"ND"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Nebraska",
+                     "Value":"NE"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"New Hampshire",
+                     "Value":"NH"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"New Jersey",
+                     "Value":"NJ"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"New Mexico",
+                     "Value":"NM"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Nevada",
+                     "Value":"NV"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"New York",
+                     "Value":"NY"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Ohio",
+                     "Value":"OH"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Oklahoma",
+                     "Value":"OK"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Oregon",
+                     "Value":"OR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Pennsylvania",
+                     "Value":"PA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Puerto Rico",
+                     "Value":"PR"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Rhode Island",
+                     "Value":"RI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"South Carolina",
+                     "Value":"SC"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"South Dakota",
+                     "Value":"SD"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Tennessee",
+                     "Value":"TN"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Texas",
+                     "Value":"TX"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Utah",
+                     "Value":"UT"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Virginia",
+                     "Value":"VA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Virgin Islands",
+                     "Value":"VI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Vermont",
+                     "Value":"VT"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Washington",
+                     "Value":"WA"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Wisconsin",
+                     "Value":"WI"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"West Virginia",
+                     "Value":"WV"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Wyoming",
+                     "Value":"WY"
+                  }
+               ],
+               "BillingAddressItems":[  
+                  {  
+                     "Selected":false,
+                     "Text":"New Address",
+                     "Value":""
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"28 Damrell Street",
+                     "Value":"56005564-3d29-47d2-b9ec-fcb1c69373b4"
+                  }
+               ],
+               "Addresses":[  
+                  {  
+                     "Key":"56005564-3d29-47d2-b9ec-fcb1c69373b4",
+                     "AddressType":"a6566b3c-9a6d-49d6-b683-8a1389117009",
+                     "Line1":"28 Damrell Street",
+                     "Line2":"Suite 300",
+                     "Line3":"",
+                     "Country":"UNITED STATES",
+                     "State":"MA",
+                     "PostCode":"02127",
+                     "City":"Boston",
+                     "MailingLabelHtml":"28 DAMRELL STREET\u003cBR/\u003eSUITE 300\u003cBR/\u003eBOSTON, MA 02127\u003cBR/\u003eUNITED STATES"
+                  }
+               ],
+               "AddressTypeItems":[  
+                  {  
+                     "Selected":false,
+                     "Text":"Home",
+                     "Value":"516d1042-9da8-4a4a-b303-21bd24336896"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Office",
+                     "Value":"a6566b3c-9a6d-49d6-b683-8a1389117009"
+                  },
+                  {  
+                     "Selected":false,
+                     "Text":"Other",
+                     "Value":"c46c3845-7baa-4209-b42c-08ec4dc53bd6"
+                  }
+               ],
+               "IsNew":false,
+               "EditMode":false,
+               "EmailAddress":null,
+               "PrintAndMailUrl":null,
+               "ContinueActionText":null,
+               "PrintAndMailActionText":null,
+               "CartState":null
+            }
+            
+## Save Billing Address [/cart/SaveBillingAddress]
+### Save Billing Address [POST]
+User has the ability to edit address in step 2
+
++ Request (*/*)
+
+        {
+            "quantity": 1
+        }
+
++ Response 200
+
+## Order History [/api/account/TransactionDetail?transactionId={id}&transactionType={type}]
+### Get Order History [GET]
+Get the user's order history (Open invoices and orders; Completed invoices and orders)
+
+ENG team will provide data attributes in the HTML for front end to use.
+
+__data-transaction-id="6aaa9ee6-9a14-4ed1-8a45-ed1079bf242f"__
+
+__data-transaction-type="Open"__
+
++ Parameters
+    + id (number, required, `6aaa9ee6-9a14-4ed1-8a45-ed1079bf242f`) ... Transaction ID
+    + type (string, required, `Open`) ... Transaction type
+
++ Response 200 (text/html; charset=utf-8)
+
+    + Body
+
+            <ul>
+                <li>
+                    <span>
+                        (1)
+                        legacy17
+                        $4.50
+                    </span>
+                </li>
+                <li>
+                    <span>
+                        (1)
+                        Academy Fellow Program Pin - FAND
+                        $24.95
+                    </span>
+                </li>
+                <li>
+                    <span>
+                        (1)
+                        Legacy T shirt Fitted XXL                
+                        $14.99
+                    </span>
+                </li>
+                <li>
+                    <span>
+                        (1)
+                        UPS Ground
+                        $7.50
+                    </span>
+                </li>
+            </ul>
+
+# Group Listings
+## Videos [/api/Video/GetVideos?pageIndex={page}&pageSize={size}&dataID={id}&dataType={type}]
+### Get Videos [GET]
+Load the next set of videos or latest articles.
+
+Sitecore will render the first set of videos and latest articles and a load more button for each.
+
++ Parameters
+    + page (number, required, `0`) ... Page number
+    + size (number, required, `10`) ... Number of results
+    + id (string, required, `73395764-2602-4137-93c4-667e4119f4e1`) ... Data ID
+    + type (string, required, `video`) ... Type of data
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "PageSize": 10,
+                "PageIndex": 0,
+                "TotalResults": 100,
+                "List": [
+                    {
+                        "Image": "http://www.eatright.org/~/media/eatrightimages/eatrightvideoimages/julienne%20vegetables.ashx",
+                        "Title": "Planning and Prep",
+                        "Name": "Julienne Vegetables",
+                        "Author": "Presented by Academy of Nutrition and Dietetics",
+                        "Description": "Finding fun and new ways to serve vegetables – like julienning – can make it easier to get the two and a half cups we need every day.",
+                        "Link": "/resource/food/planning-and-prep/cooking-tips-and-trends/julienne-vegetables",
+                        "MoreTitle": "View Item"
+                    },
+                    {
+                        "Image": "http://www.eatright.org/~/media/homefoodsafety/multimedia/videothumbnails/outdoordining.ashx",
+                        "Title": "Nutrition",
+                        "Name": "Understanding the New Nutrition Facts Label",
+                        "Author": "",
+                        "Description": "The new Nutrition Facts label features updated information to help consumers make informed food choices about the foods they eat. See what changes were made!",
+                        "Link": "/resource/food/nutrition/nutrition-facts-and-food-labels/understanding-the-new-nutrition-facts-label",
+                        "MoreTitle": "View Item"
+                    }
+                ]
+            }
+            
+## Article Categories [/api/Article/GetArticleCategories?pageIndex={page}&pageSize={size}]
+### Get Article Categories [GET]
+Load the next set of latest articles for categories.
+
+Sitecore will render the first set of articles and a load more button which will fetch and render 4 more articles..
+
++ Parameters
+    + page (number, required, `0`) ... Page number
+    + size (number, required, `10`) ... Number of results
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "PageSize": 10,
+                "PageIndex": 0,
+                "TotalResults": 100,
+                "List": [
+                    {
+                        "Image": "http://www.eatright.org/~/media/eatrightimages/eatrightvideoimages/julienne%20vegetables.ashx",
+                        "Title": "Planning and Prep",
+                        "Name": "Julienne Vegetables",
+                        "Author": "Presented by Academy of Nutrition and Dietetics",
+                        "Description": "Finding fun and new ways to serve vegetables – like julienning – can make it easier to get the two and a half cups we need every day.",
+                        "Link": "/resource/food/planning-and-prep/cooking-tips-and-trends/julienne-vegetables",
+                        "MoreTitle": "Read More",
+                        "IsLocked": true
+                    },
+                    {
+                        "Image": "http://www.eatright.org/~/media/homefoodsafety/multimedia/videothumbnails/outdoordining.ashx",
+                        "Title": "Nutrition",
+                        "Name": "Understanding the New Nutrition Facts Label",
+                        "Author": "",
+                        "Description": "The new Nutrition Facts label features updated information to help consumers make informed food choices about the foods they eat. See what changes were made!",
+                        "Link": "/resource/food/nutrition/nutrition-facts-and-food-labels/understanding-the-new-nutrition-facts-label",
+                        "MoreTitle": "Read More",
+                        "IsLocked": false
+                    }
+                ]
+            }
+            
+## Article Topics [/api/Article/GetArticleTopics?pageIndex={page}&pageSize={size}]
+### Get Article Topics [GET]
+Load the next set of latest articles for topics.
+
+Sitecore will render the first set of articles and a load more button which will fetch and render 4 more articles..
+
++ Parameters
+    + page (number, required, `0`) ... Page number
+    + size (number, required, `10`) ... Number of results
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "PageSize": 10,
+                "PageIndex": 0,
+                "TotalResults": 100,
+                "List": [
+                    {
+                        "Image": "http://www.eatright.org/~/media/eatrightimages/eatrightvideoimages/julienne%20vegetables.ashx",
+                        "Title": "Planning and Prep",
+                        "Name": "Julienne Vegetables",
+                        "Author": "Presented by Academy of Nutrition and Dietetics",
+                        "Description": "Finding fun and new ways to serve vegetables – like julienning – can make it easier to get the two and a half cups we need every day.",
+                        "Link": "/resource/food/planning-and-prep/cooking-tips-and-trends/julienne-vegetables",
+                        "MoreTitle": "Read More"
+                    },
+                    {
+                        "Image": "http://www.eatright.org/~/media/homefoodsafety/multimedia/videothumbnails/outdoordining.ashx",
+                        "Title": "Nutrition",
+                        "Name": "Understanding the New Nutrition Facts Label",
+                        "Author": "",
+                        "Description": "The new Nutrition Facts label features updated information to help consumers make informed food choices about the foods they eat. See what changes were made!",
+                        "Link": "/resource/food/nutrition/nutrition-facts-and-food-labels/understanding-the-new-nutrition-facts-label",
+                        "MoreTitle": "Read More"
+                    }
+                ]
+            }
+
+# Group Emails
+## Leadership Email [/api/LeadershipDirectory/Send]
+### Post Leadership Email [POST]
+Send an email to a leadership member found in the leadership directory.
+
++ Request (application/json)
+
+        {
+           "message":{
+              "Subject": "hello",
+              "Message": "hello",
+              "SenderName": "asdasd",
+              "SenderAddress": "hello@info.com",
+              "ReceipentMemberId": "ff15ef41fa1b4a79b521007fec3b74b6",
+              "GRecaptchaResponse": "03AIezHSZhUU4NGI9i18aUSdxtOa64LBxQsBn6u7ZQCy8Fa_8jRp0AREr2FUs1wxLl9S9GcCZw1Yzc_tsA5tdjRWn21QGsSh8qpPE84_OK92KAqNhu89VI85HGoDOKUH_38tAyCsetWUVo6oLCog5cZA29sd4JrXMC33A_Fd336QbtVI1alEv_F1C0gr6dhmgVxV0tJWvsIjzi5t1mTBkYPnKclRwlhxzjglZ00s576EjwJ1olJFkuJkYARd4KSYTEbWexVIbmtGinJlxVqT1K4pOmHnXLzJdY3jB7CNlNuLnaZ3apr9gaF2qAN5Y0C2JqNMa_3YIwg6csTDOJw4J1jlkZcglgrVIvjsqYXYx1Mausb9FcMEvVG3rjSsSjcZ2l19eqSdmqAIKwdu2JpEBxLwWH2pIQNshv8wBNuANO_O8LVFt6-o"
+           }
+        }
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "Success": true
+            }
+            
+# Group Cart
+## Preview [/api/Cart/Preview]
+### Get Preview [GET]
+Upon entering the store site, this will check to see how many items you have in your cart. The response will just be a number.
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+                "Count": 4
+            }
+            
+## Quickview [/api/Cart/Quickview]
+### Get Quickview [GET]
+Rolling over the shopping cart in the header will produce an overlay to show the user what he/she has in their cart.
+
++ Response 200 (text/html; charset=utf-8)
+
+    + Body
+
+            <!--<div>
+                <div class="overlayHead">
+                    <div class="cartHead">
+                        <span class="title">Item(s) Added to Cart</span>
+                        <a href="#" class="btn btn--primary btnAlt close">X</a>
+                    </div>
+                </div>
+                <div class="overlayContent">
+                    <p class="subtotal">0 item(s) Subtotal <span>$0.00</span></p>
+                    <a href="http://www.eatrightstore.org/Cart/Checkout" class="btn btn--primary btnFull">Checkout</a>
+                    <u><a href="/po-boxes-and-international-addresses" target="_blank">P.O. Boxes and International Addresses Click Here</a></u>
+                </div>
+            </div>
+            -->
+            <div>
+              <div class="overlayHead">
+                <div class="cartHead">
+                  <span class="title">Item(s) Added to Cart</span>
+                  <a href="#" class="btn btn--primary btnAlt close">X</a>
+                </div>
+              </div>
+              <div class="overlayContent">
+                <a href="http://www.eatrightstore.org/product/884A80B4-BBDB-473A-B532-3FAE324131BB" class="item">
+                  <span class="aside"><img src="/~/media/ae/product.ashx" width="80" alt="Example"></span>
+                  <span class="content">
+                      <span class="title">Academy of Nutrition and Dietetics Complete Food  Nutrition Guide Fifth Edition</span>
+                      <span class="type"></span>
+                      <span class="infoLine">SKU# </span>
+                      <span class="price">$30.00</span>
+                  </span>
+                </a>
+                <table class="lineTable">
+                  <thead>
+                  <tr>
+                    <th class="qty" scope="col" colspan="2">QTY</th>
+                    <th class="price" scope="col" colspan="2">Price</th>
+                    <th class="total" scope="col">Total</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td class="qty">1</td>
+                    <td>x</td>
+                    <td class="price">$30.00</td>
+                    <td>=</td>
+                    <td class="total">$30.00</td>
+                  </tr>
+                  </tbody>
+                </table>
+                <a href="http://www.eatrightstore.org/product/C944D9F7-1C61-4AD9-94F8-ADB541952ABB" class="item">
+                  <span class="aside"><img src="/~/media/eatrightstoreimages/books and publications/books/pgtoeatingdisorders.ashx" width="80" alt="Example"></span>
+                  <span class="content">
+                      <span class="title">Academy of Nutrition and Dietetics Pocket Guide to Eating Disorders, 2nd Ed.</span>
+                      <span class="type">Publication</span>
+                      <span class="infoLine">SKU# 436X17</span>
+                      <span class="price">$34.99</span>
+                  </span>
+                </a>
+                <table class="lineTable">
+                  <thead>
+                  <tr>
+                    <th class="qty" scope="col" colspan="2">QTY</th>
+                    <th class="price" scope="col" colspan="2">Price</th>
+                    <th class="total" scope="col">Total</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td class="qty">1</td>
+                    <td>x</td>
+                    <td class="price">$34.99</td>
+                    <td>=</td>
+                    <td class="total">$34.99</td>
+                  </tr>
+                  </tbody>
+                </table>
+                <a href="http://www.eatrightstore.org/product/124344D8-EFA2-4839-AEF9-7EF51F08F4A4" class="item">
+                  <span class="aside"><img src="/~/media/eatrightstoreimages/books and publications/books/bitsandbytes.ashx" width="80" alt="Example"></span>
+                  <span class="content">
+                      <span class="title">Bits and Bytes: A Guide to Digitally Tracking Your Food, Fitness, and Health</span>
+                      <span class="type">Publication</span>
+                      <span class="infoLine">SKU# 492517</span>
+                      <span class="price">$9.99</span>
+                  </span>
+                </a>
+                <table class="lineTable">
+                  <thead>
+                  <tr>
+                    <th class="qty" scope="col" colspan="2">QTY</th>
+                    <th class="price" scope="col" colspan="2">Price</th>
+                    <th class="total" scope="col">Total</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr>
+                    <td class="qty">1</td>
+                    <td>x</td>
+                    <td class="price">$9.99</td>
+                    <td>=</td>
+                    <td class="total">$9.99</td>
+                  </tr>
+                  </tbody>
+                </table>
+                <p class="subtotal">3 item(s) Subtotal <span>$74.98</span></p>
+                <a href="http://www.eatrightpro.org/users/login?returnUrl=http%3a%2f%2fwww.eatrightstore.org%2fCart%2fCheckout" class="btn btn--primary btnFull">Login/Register to Checkout</a>
+              </div>
+            </div>
+            
+## Add to Cart [/api/Cart/AddKey/{id}]
+### Post to Cart [POST]
+Add item to cart with quantity
+
++ Parameters
+    + id (string, required, `DD3109DD-E4AA-47B7-A581-B67550BD70ED`) ... Product ID
+
++ Request (application/x-www-form-urlencoded; charset=UTF-8)
+
+        {
+           "quantity": 1
+        }
+
++ Response 200 (text/html; charset=utf-8)
+
+    + Body
+
+            the cart: 1, wasactive:False isnowactivated:True token:7c19834b-9372-4491-a3e6-d080f06dc856
+
+
+# Group Search
+## Suggestive Search [/api/SiteSearch/SuggestiveSearch?q={term}]
+### Get Suggestions [GET]
+The suggestive search renders some search results below the header search field. It will query more results when the user types 3 or more letters in the field.
+
++ Parameters
+    + term (string, required, `ncp`) ... Search term
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+               "Count":118,
+               "ContentCount":4,
+               "MatchText": "[Top Number Matches]",
+               "PopularSearchText": "[Popular Searches]",
+               "ViewAllText": "[View All Matches]",
+               "ViewAllUrl": "#",
+               "TotalResultsText": "[33 Articles]",
+               "Popular":[
+                  {  
+                     "Value":"\u003cb\u003encp\u003c/b\u003e",
+                     "URL":"http://www.eatrightstore.org/search/?keyword=ncp"
+                  },
+                  {  
+                     "Value":"\u003cb\u003encpt\u003c/b\u003e",
+                     "URL":"http://www.eatrightstore.org/search/?keyword=ncpt"
+                  },
+                  {  
+                     "Value":"\u003cb\u003encp \u003c/b\u003emanual",
+                     "URL":"http://www.eatrightstore.org/search/?keyword=ncp%20manual"
+                  }
+               ],
+               "Products":[
+                  {  
+                     "ProductName":"Public Health: Community NCP Toolkit",
+                     "SKU":null,
+                     "Thumb":{
+                       "Src": "http://www.eatrightstore.org/~/media/eatrightstoreimages/practitioner tools/toolkits/publichealthcommunitytoolkit.ashx",
+                       "Alt": "Alt text"
+                     },
+                     "URL":"http://www.eatrightstore.org/product/50F6EE83-A127-4E47-9F67-649EBA063E00"
+                  },
+                  {  
+                     "ProductName":"NCP In-Depth Sponsored Independent Learning Toolkit",
+                     "SKU":null,
+                     "Thumb":{
+                        "Src": "http://www.eatrightstore.org/~/media/eatrightstoreimages/practitioner tools/toolkits/ncplearningtoolkit.ashx",
+                        "Alt": "Alt Text for image"
+                     }
+                     ,
+                     "URL":"http://www.eatrightstore.org/product/ED460185-46EA-4C6A-B411-B3A335654358"
+                    },
+                  {  
+                     "ProductName":"eNCPT Student Companion Guide",
+                     "SKU":null,
+                     "Thumb":{
+                        "Src": "http://www.eatrightstore.org/~/media/eatrightstoreimages/books and publications/study guides/encptstudentcompanionguide.ashx",
+                        "Alt": "Alternative text"
+                     },
+                     "URL":"http://www.eatrightstore.org/product/DD3109DD-E4AA-47B7-A581-B67550BD70ED"
+                    }
+               ],
+               "SearchWebsiteURL":"http://www.eatrightstore.org/search"
+            }
+            
+## Site Search [/api/SiteSearch/Search?pagenum={pg}&pageSize={ps}&keyword={keyword}&types={types}&audiences={audiences}&topics={topics}&categories={categories}&nonmemberprice={nmp}&memberprice={mp}&sortBy={sortby}]
+### Get Search Results [GET]
+Get main search results as a user is filtering based off of the keyword. JavaScript should change the URL as you are filtering with the "#" pattern.
+
+If no search results are found - the API will return this
+
+```
+{
+  "Success": true,
+  "Results": [],
+  "Message": "Sorry! We couldn't find any results for your search."
+}
+```
+
++ Parameters
+    + keyword (string, required, `books`) ... Main keyword
+    + pg (string, optional, `2`) ... Page
+    + audiences (string, optional, `fk,fm`) ... Comma delimited list of audiences
+    + categories (string, optional, `li`) ... Comma delimited list of categories
+    + topics (string, optional, `cat`) ... Comma delimited list of topics
+
++ Response 200 (application/json; charset=utf-8)
+
+    + Body
+
+            {
+              "Success": true,
+              "queryString":"pageSize=40&sortBy=nameasc&categories=c1,c3&topics=t1&themes=th2&keyword=food",
+              "ResultsControls": {
+                "sortBy": "namedesc",
+                "pageSize": -1,
+                "pageIndex": 1,
+                "pageResultsTotal": 52
+              },
+              "ActiveFilters": {
+                "categories": [],
+                "topics": [
+                  "t1",
+                  "t2",
+                  "t4"
+                ],
+                "themes": [
+                  "th2"
+                ]
+              },
+              "Results": [
+                {
+                  "Title": "Exploring More About Food1",
+                  "Type": "Article",
+                  "Link": "http://www.eatright.org/resource/food/nutrition/eating-as-a-family/exploring-more-about-food",
+                  "Date": "01/21/2014",
+                  "Author": "Pamela Charney, PhD, RD; Ainsley Malone, MS, RD, LD, CNSC, FAND",
+                  "Thumb":
+                    {
+                      "Src": "/images/ContentManaged/search-results/NutritionCareoftheOlderAdult.jpg",
+                      "Alt": "Alt text for thumb"
+                    },
+                    "Prices": [
+                    {
+                        "Title": "Member Price",
+                        "Value": "50.5"
+                    },
+                    {
+                        "Title": "Nonmember Price",
+                        "Value": "66"
+                    }
+                    ],
+                  "Description": "Food offers a world of experiences well suited to how children learn. Because food can become a 'hands-on' activity, everyday tasks can get kids involved in food – and so promote healthful eating. hands-on eating exploration healthful eating Exploring More About Food Exploring More Ab...",
+                  "Breadcrumbs": [
+                    {
+                      "Name": "Food",
+                      "Link": "http://www.eatright.org/resources/food"
+                    },
+                    {
+                      "Name": "Nutrition",
+                      "Link": "http://www.eatright.org/resources/food/nutrition"
+                    },
+                    {
+                      "Name": "Eating as a Family",
+                      "Link": "http://www.eatright.org/resources/food/nutrition/eating-as-a-family"
+                    },
+                    {
+                      "Name": "Exploring More About Food"
+                    }
+                  ]
+                },
+                {
+                  "Title": "Exploring More About Food2",
+                  "Type": "Article",
+                  "Link": "http://www.eatright.org/resource/food/nutrition/eating-as-a-family/exploring-more-about-food",
+                  "Date": "01/21/2014",
+                  "Author": "Pamela Charney, PhD, RD; Ainsley Malone, MS, RD, LD, CNSC, FAND",
+                  "Thumb":
+                    {
+                    },
+                    "Prices": [
+                    {
+                        "Title": "Member Price",
+                        "Value": "50.5"
+                    },
+                    {
+                        "Title": "Nonmember Price",
+                        "Value": "66"
+                    }
+                    ],
+                  "Description": "Food offers a world of experiences well suited to how children learn. Because food can become a 'hands-on' activity, everyday tasks can get kids involved in food – and so promote healthful eating. hands-on eating exploration healthful eating Exploring More About Food Exploring More Ab...",
+                  "Breadcrumbs": [
+                    {
+                      "Name": "Food",
+                      "Link": "http://www.eatright.org/resources/food"
+                    },
+                    {
+                      "Name": "Nutrition",
+                      "Link": "http://www.eatright.org/resources/food/nutrition"
+                    },
+                    {
+                      "Name": "Eating as a Family",
+                      "Link": "http://www.eatright.org/resources/food/nutrition/eating-as-a-family"
+                    },
+                    {
+                      "Name": "Exploring More About Food"
+                    }
+                  ]
+                },
+                {
+                  "Title": "Exploring More About Food2",
+                  "Type": "Article",
+                  "Link": "http://www.eatright.org/resource/food/nutrition/eating-as-a-family/exploring-more-about-food",
+                  "Date": "01/21/2014",
+                  "Author": "Pamela Charney, PhD, RD; Ainsley Malone, MS, RD, LD, CNSC, FAND",
+                  "Thumb":
+                    {
+                    },
+                  "Prices": null,
+                  "Description": "Food offers a world of experiences well suited to how children learn. Because food can become a 'hands-on' activity, everyday tasks can get kids involved in food – and so promote healthful eating. hands-on eating exploration healthful eating Exploring More About Food Exploring More Ab...",
+                  "Breadcrumbs": [
+                    {
+                      "Name": "Food",
+                      "Link": "http://www.eatright.org/resources/food"
+                    },
+                    {
+                      "Name": "Nutrition",
+                      "Link": "http://www.eatright.org/resources/food/nutrition"
+                    },
+                    {
+                      "Name": "Eating as a Family",
+                      "Link": "http://www.eatright.org/resources/food/nutrition/eating-as-a-family"
+                    },
+                    {
+                      "Name": "Exploring More About Food"
+                    }
+                  ]
+                }
+              ],
+              "Message": ""
+            }
